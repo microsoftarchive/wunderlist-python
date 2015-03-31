@@ -1,0 +1,8 @@
+{
+  "authentication_url" : "https://www.wunderlist.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&state=abc",
+  "callback_url" : "http://YOURDOMAIN/callback/wunderlist",
+  "token_url" : "https://www.wunderlist.com/oauth/access_token",
+  "client_id" : "YOUR_CLIENT_ID",
+  "client_secret" : "YOUR_CLIENT_SECRET",
+  "redirect" : "logic"
+}

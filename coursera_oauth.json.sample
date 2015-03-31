@@ -1,0 +1,8 @@
+    {
+      "authentication_url" : "https://accounts.coursera.org/oauth2/v1/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=view_profile&state=csrf_code1234",
+      "callback_url" : "http://YOURDOMAIN/callback/coursera",
+      "token_url" : "https://accounts.coursera.org/oauth2/v1/token",
+      "client_id" : "YOUR_CLIENT_ID",
+      "client_secret" : "YOUR_CLIENT_SECRET",
+      "redirect" : "wunderlist"
+    }
