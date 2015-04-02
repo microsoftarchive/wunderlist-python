@@ -35,14 +35,14 @@ def push_to_api(service, push_url, payload, patch = False):
     headers = { 'X-Access-Token' : oauth[service]['token'], 'X-Client-ID' : oauth[service]['client_id'], 'Content-Type' : 'application/json' }
     req = urllib2.Request(push_url, json.dumps(payload), headers)
     if patch:
-      req.get_method = lambda: 'PATCH'
+        req.get_method = lambda: 'PATCH'
     return urllib2.urlopen(req).read()
 
 def redirects(page):
     if page in services:
-      uri = oauth[page]['authentication_url'] % (oauth[page]['client_id'], oauth[page]['callback_url'])
+        uri = oauth[page]['authentication_url'] % (oauth[page]['client_id'], oauth[page]['callback_url'])
     else:
-      uri = url_for(page)
+        uri = url_for(page)
     return uri
 
 @app.route('/')
@@ -70,45 +70,41 @@ def logic():
     resp = fetch_from_api('foursquare', 'https://api.foursquare.com/v2/users/self/friends?oauth_token=%s&v=%s', time.strftime('%Y%m%d'))
     friends = {}
     for friend in resp['response']['friends']['items']:
-      if friend['tips']['count'] != 0:
-        friends[friend['id']] = friend.get('firstName', '') + ' ' + friend.get('lastName', '')
+        if friend['tips']['count'] != 0:
+            friends[friend['id']] = friend.get('firstName', '') + ' ' + friend.get('lastName', '')
 
     # make a new list
     resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/lists', { "title" : "4SQ tips for " + homecity + " from friends." })
     list_id = json.loads(resp)['id']
 
     venues = {}
-    starred = []
 
     # if city of tip is homecity check whether the venue is already in the list
     # if no, add venue as task and add tip as comment
     # if yes, add tip as comment and star the task
     for friend_id in friends:
-      resp = fetch_from_api('foursquare', 'https://api.foursquare.com/v2/lists/' + friend_id + '/tips?oauth_token=%s&v=%s', time.strftime('%Y%m%d'))
-      for tip in resp['response']['list']['listItems'].get('items', []):
-        if tip['venue']['location'].get('city', '') == homecity:
+        resp = fetch_from_api('foursquare', 'https://api.foursquare.com/v2/lists/' + friend_id + '/tips?oauth_token=%s&v=%s', time.strftime('%Y%m%d'))
+        for tip in resp['response']['list']['listItems'].get('items', []):
+            if tip['venue']['location'].get('city', '') == homecity:
 
-          title = tip['venue']['name'] + ' (' + tip['venue']['location']['address'] + ') #' + tip['venue']['categories'][0]['name'].replace(' ', '_').lower()
-          text = tip['tip']['text'] + ' (' + friends[friend_id] + ')'
+                title = tip['venue']['name'] + ' (' + tip['venue']['location']['address'] + ') #' + tip['venue']['categories'][0]['name'].replace(' ', '_').lower()
+                text = tip['tip']['text'] + ' (' + friends[friend_id] + ')'
 
-          if title not in venues.keys():
-            payload = { "list_id" : list_id, "title" : title }
-            resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks', payload)
-            task_id = json.loads(resp)['id']
-            venues[title] = task_id
-          else:
-            task_id = venues[title]
-            
-            if venues[title] not in starred:
-              # make sure to have a proper revision property
-              resp = fetch_from_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks/' + str(task_id) + '?access_token=%s&client_id=%s', oauth['wunderlist']['client_id'])
-              resp["starred"] = True
-              resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks/' + str(task_id), resp, True)
-              starred.append(venues[title])
+                if title not in venues.keys():
+                    payload = { "list_id" : list_id, "title" : title }
+                    resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks', payload)
+                    task_id = json.loads(resp)['id']
+                    venues[title] = task_id
+                else:
+                    task_id = venues[title]
+                    # make sure to have a proper revision property
+                    resp = fetch_from_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks/' + str(task_id) + '?access_token=%s&client_id=%s', oauth['wunderlist']['client_id'])
+                    resp["starred"] = True
+                    resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks/' + str(task_id), resp, True)
 
-          payload = { "task_id" : task_id, "text" : text }
-          task_comment = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/task_comments', payload)
-    
+                payload = { "task_id" : task_id, "text" : text }
+                task_comment = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/task_comments', payload)
+
     return str('Ok.')
 
 if __name__ == "__main__":

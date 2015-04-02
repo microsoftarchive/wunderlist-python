@@ -39,9 +39,9 @@ def push_to_api(service, push_url, payload):
 
 def redirects(page):
     if page in services:
-      uri = oauth[page]['authentication_url'] % (oauth[page]['client_id'], oauth[page]['callback_url'])
+        uri = oauth[page]['authentication_url'] % (oauth[page]['client_id'], oauth[page]['callback_url'])
     else:
-      uri = url_for(page)
+        uri = url_for(page)
     return uri
 
 @app.route('/')
@@ -65,31 +65,31 @@ def logic():
     resp = fetch_from_api('coursera', 'https://api.coursera.org/api/users/v1/me/enrollments?access_token=%s&client_id=%s')
     actives = {}
     for enrollment in resp['enrollments']:
-      if enrollment['startStatus'] == 'Present':
-        actives[enrollment['courseId']] = {'sessionId' : enrollment['sessionId']}
+        if enrollment['startStatus'] == 'Present':
+            actives[enrollment['courseId']] = {'sessionId' : enrollment['sessionId']}
     for course in resp['courses']:
-      if course['id'] in actives:
-        actives[course['id']]['name'] = course['name']
+        if course['id'] in actives:
+            actives[course['id']]['name'] = course['name']
 
     # keying together name and newly created Wunderlist list id on sessionId
     courses = {}
     for key, value in actives.iteritems():
-      courses[value['sessionId']] = {'name' : value['name']}
-      resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/lists', { "title" : value['name'] })
-      courses[value['sessionId']]['list_id'] = json.loads(resp)['id']
+        courses[value['sessionId']] = {'name' : value['name']}
+        resp = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/lists', { "title" : value['name'] })
+        courses[value['sessionId']]['list_id'] = json.loads(resp)['id']
 
     # get all calendars and push their items to the respective lists
     resp = urllib2.urlopen('https://api.coursera.org/api/catalog.v1/sessions')
     r = json.loads(resp.read())
     for session in r['elements']:
-      if session['id'] in courses.keys():
-        resp = urllib2.urlopen('http://class.coursera.org/%s/api/course/calendar' % (session['homeLink'].split('/')[3]))
-        cal = Calendar.from_ical(resp.read())
-        for event in cal.walk('vevent'):
-          title = event.decoded('summary')
-          due_date = event.decoded('dtstart').strftime('%Y-%m-%d')
-          payload = { "list_id" : courses[session['id']]['list_id'] , "title" : title, "due_date" : due_date }
-          task = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks', payload)
+        if session['id'] in courses.keys():
+            resp = urllib2.urlopen('http://class.coursera.org/%s/api/course/calendar' % (session['homeLink'].split('/')[3]))
+            cal = Calendar.from_ical(resp.read())
+            for event in cal.walk('vevent'):
+                title = event.decoded('summary')
+                due_date = event.decoded('dtstart').strftime('%Y-%m-%d')
+                payload = { "list_id" : courses[session['id']]['list_id'] , "title" : title, "due_date" : due_date }
+                task = push_to_api('wunderlist', 'https://a.wunderlist.com/api/v1/tasks', payload)
     return 'Ok.'
 
 if __name__ == "__main__":
